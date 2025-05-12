@@ -5,11 +5,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.sql.SQLException;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.flickfinder.dao.MovieDAO;
+import com.flickfinder.model.MovieRating;
+import com.flickfinder.model.Person;
 
 import io.javalin.http.Context;
 
@@ -120,5 +123,55 @@ class MovieControllerTest {
 		movieController.getMovieById(ctx);
 		verify(ctx).status(404);
 	}
-
+	
+	@Test
+	void testGetPeopleByMovieId() throws SQLException {
+		when(ctx.pathParam("id")).thenReturn("2");
+        List<Person> mockStars = List.of(new Person(1, "Actor A", 1980));
+        when(movieDAO.getPeopleByMovieId(2)).thenReturn(mockStars);
+        movieController.getPeopleByMovieId(ctx);
+        verify(movieDAO).getPeopleByMovieId(2);
+        verify(ctx).json(mockStars);
+	}
+	
+	@Test
+	void testThrows500ExceptionWhenGetPeopleByMovieIdDatabaseError() throws SQLException {
+		when(ctx.pathParam("id")).thenReturn("3");
+        when(movieDAO.getPeopleByMovieId(3)).thenThrow(new SQLException());
+        movieController.getPeopleByMovieId(ctx);
+        verify(ctx).status(500);
+	}
+	
+	@Test
+	void testGetRatingsByYear() throws SQLException {
+		when(ctx.pathParam("year")).thenReturn("1994");
+        when(ctx.queryParam("limit")).thenReturn(null);
+        when(ctx.queryParam("votes")).thenReturn(null);
+        List<MovieRating> mockRatings = List.of(new MovieRating(1, "The Shawshank Redemption", 1994, 9.3, 2200000));
+        when(movieDAO.getRatingsByYear(1994, 50, 1000)).thenReturn(mockRatings);
+        movieController.getRatingsByYear(ctx);
+        verify(movieDAO).getRatingsByYear(1994, 50, 1000);
+        verify(ctx).json(mockRatings);
+	}
+	
+	@Test
+	void testThrows400ExceptionWhenGetRatingsByYearDatabaseError() throws SQLException {
+		when(ctx.pathParam("year")).thenReturn("1994");
+        when(ctx.queryParam("limit")).thenReturn("x");
+        when(ctx.queryParam("votes")).thenReturn("y");
+        movieController.getRatingsByYear(ctx);
+        verify(ctx).status(400);
+        verify(ctx).result("limit and votes must be integers");
+	}
+	
+	@Test
+    void testThrows500ExceptionWhenGetRatingsByYearDatabaseError() throws SQLException {
+        when(ctx.pathParam("year")).thenReturn("1994");
+        when(ctx.queryParam("limit")).thenReturn(null);
+        when(ctx.queryParam("votes")).thenReturn(null);
+        when(movieDAO.getRatingsByYear(1994, 50, 1000)).thenThrow(new SQLException());
+        movieController.getRatingsByYear(ctx);
+        verify(ctx).status(500);
+        verify(ctx).result("Database error");
+    }
 }

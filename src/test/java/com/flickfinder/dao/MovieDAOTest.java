@@ -11,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.flickfinder.model.Movie;
+import com.flickfinder.model.MovieRating;
+import com.flickfinder.model.Person;
 import com.flickfinder.util.Database;
 import com.flickfinder.util.Seeder;
 
@@ -98,6 +100,37 @@ class MovieDAOTest {
 		}
 
 	}
+	
+	@Test
+    void testGetPeopleByMovieId() {
+        try {
+            // Movie 1 has two stars: IDs 1 and 2
+            List<Person> stars = movieDAO.getPeopleByMovieId(1);
+            assertEquals(2, stars.size(), "Movie 1 should have 2 stars");
+            assertEquals(1, stars.get(0).getId());
+            assertEquals("Tim Robbins", stars.get(0).getName());
+            assertEquals(2, stars.get(1).getId());
+            assertEquals("Morgan Freeman", stars.get(1).getName());
+        } catch (SQLException e) {
+            fail("SQLException thrown");
+        }
+    }
+	
+	@Test
+    void testGetRatingsByYear() {
+        try {
+            List<MovieRating> ratings = movieDAO.getRatingsByYear(1994, 50, 1000);
+            assertEquals(1, ratings.size(), "Only one movie from 1994");
+            MovieRating mr = ratings.get(0);
+            assertEquals(1, mr.getId());
+            assertEquals("The Shawshank Redemption", mr.getTitle());
+            assertEquals(9.3, mr.getRating(), 0.0001);
+            assertEquals(2200000, mr.getVotes());
+            assertEquals(1994, mr.getYear());
+        } catch (SQLException e) {
+            fail("SQLException thrown");
+        }
+    }
 
 	@AfterEach
 	void tearDown() {
